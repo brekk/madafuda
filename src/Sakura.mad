@@ -1,0 +1,276 @@
+import Float from "Float"
+import IO from "IO"
+import List from "List"
+import Math from "Math"
+import Maybe from "Maybe"
+
+import Random from "Random"
+
+
+
+// import Random from "Random"
+
+
+
+export type Suit
+  = Pine
+  | Plum
+  | Cherry
+  | Wisteria
+  | Iris
+  | Peony
+  | Clover
+  | Grass
+  | Chrysanthemum
+  | Maple
+  | Willow
+  | Foxglove
+
+type CardState = Pile | Up | Held | Played | Discarded
+type PlayingCard = PlayingCard(CardState, Card)
+
+
+
+// Hikari = 20
+// Tane = 5
+// Tanzaku = 10
+// Kasu = 0
+export type Value = Hikari | Tane | Tanzaku | Kasu
+export type Card = Card(Suit, Value)
+
+type Player = Player(String, List Card)
+
+
+export named = {
+  crane: Card(Pine, Hikari),
+  warbler: Card(Plum, Tane),
+  sakura: Card(Cherry, Hikari),
+  songbird: Card(Wisteria, Tane),
+  bridge: Card(Iris, Tane),
+  butterflies: Card(Peony, Tane),
+  pig: Card(Clover, Tane),
+  moon: Card(Grass, Hikari),
+  birds: Card(Grass, Tanzaku),
+  sake: Card(Chrysanthemum, Tane),
+  deer: Card(Maple, Tane),
+  police: Card(Willow, Kasu),
+  rainman: Card(Willow, Tane),
+  swallow: Card(Willow, Tane),
+  chicken: Card(Foxglove, Hikari),
+  foxglove: Card(Foxglove, Tanzaku),
+}
+
+export banners = {
+  pine: Card(Pine, Tanzaku),
+  plum: Card(Plum, Tanzaku),
+  cherry: Card(Cherry, Tanzaku),
+  wisteria: Card(Wisteria, Tanzaku),
+  iris: Card(Iris, Tanzaku),
+  grass: Card(Grass, Tanzaku),
+  peony: Card(Peony, Tanzaku),
+  clover: Card(Clover, Tanzaku),
+  chrysanthemum: Card(Chrysanthemum, Tanzaku),
+  maple: Card(Maple, Tanzaku),
+  willow: Card(Willow, Tanzaku),
+}
+
+
+deck :: List Card
+export deck = [
+  named.crane,
+  banners.pine,
+  Card(Pine, Kasu),
+  Card(Pine, Kasu),
+  named.warbler,
+  banners.plum,
+  Card(Plum, Kasu),
+  Card(Plum, Kasu),
+  named.sakura,
+  banners.cherry,
+  Card(Cherry, Kasu),
+  Card(Cherry, Kasu),
+  named.songbird,
+  banners.wisteria,
+  Card(Wisteria, Kasu),
+  Card(Wisteria, Kasu),
+  named.bridge,
+  banners.iris,
+  Card(Iris, Kasu),
+  Card(Iris, Kasu),
+  named.butterflies,
+  banners.peony,
+  Card(Peony, Kasu),
+  Card(Peony, Kasu),
+  named.pig,
+  banners.clover,
+  Card(Clover, Kasu),
+  Card(Clover, Kasu),
+  named.moon,
+  banners.grass,
+  Card(Grass, Kasu),
+  Card(Grass, Kasu),
+  named.sake,
+  banners.chrysanthemum,
+  Card(Chrysanthemum, Kasu),
+  Card(Chrysanthemum, Kasu),
+  named.deer,
+  banners.maple,
+  Card(Maple, Kasu),
+  Card(Maple, Kasu),
+  named.rainman,
+  named.swallow,
+  banners.willow,
+  named.police,
+  named.chicken,
+  named.foxglove,
+  Card(Foxglove, Kasu),
+  Card(Foxglove, Kasu),
+]
+
+export alias Yaku = #[Card, Card, Card]
+
+// these are sorted by month order 
+export yakus = [
+  #[named.crane, named.sakura, named.warbler],
+  #[named.sakura, named.moon, named.sake],
+  #[named.butterflies, named.sake, named.deer],
+  #[named.pig, named.birds, named.deer],
+  #[named.songbird, named.bridge, named.pig],
+  #[banners.pine, banners.plum, banners.cherry],
+  #[banners.wisteria, banners.iris, banners.clover],
+  #[banners.peony, banners.chrysanthemum, banners.maple],
+]
+
+// assumes that the yaku is valid and sorted
+pointsForYaku :: Yaku -> Integer
+export pointsForYaku = where {
+  #[_, Card(Cherry, Hikari), _] =>
+    100
+
+  #[Card(Cherry, Hikari), _, _] =>
+    100
+
+  _ =>
+    50
+}
+
+toOrdinalMonth :: Suit -> Integer
+toOrdinalMonth = where {
+  Pine =>
+    0
+
+  Plum =>
+    1
+
+  Cherry =>
+    2
+
+  Wisteria =>
+    3
+
+  Iris =>
+    4
+
+  Peony =>
+    5
+
+  Clover =>
+    6
+
+  Grass =>
+    7
+
+  Chrysanthemum =>
+    8
+
+  Maple =>
+    9
+
+  Willow =>
+    10
+
+  Foxglove =>
+    11
+}
+
+numberOfCardsByNumberOfPlayers :: Integer -> #[Integer, Integer]
+numberOfCardsByNumberOfPlayers = (i) => i == 2
+  ? #[8, 8]
+  : i == 3
+    ? #[7, 6]
+    : i == 4 ? #[5, 8] : i == 5 ? #[4, 8] : i == 6 ? #[3, 12] : i == 7 ? #[3, 6] : #[-1, -1]
+
+playerAtIndex :: Integer -> List Player -> Player
+playerAtIndex = (i, players) => pipe(
+  List.nth(i),
+  Maybe.fromMaybe(Player("Nobody", [])),
+)(players)
+
+playerName :: Player -> String
+playerName = where {
+  Player(name, _) =>
+    name
+}
+
+nameOfPlayerAtIndex :: List Player -> Integer -> String
+nameOfPlayerAtIndex = (players, i) => pipe(
+  playerAtIndex(i),
+  playerName,
+)(players)
+
+cut :: Integer -> List a -> #[List a, List a]
+cut = (a, xs) => #[List.slice(0, a, xs), List.slice(a, List.length(xs), xs)]
+
+segment :: Integer -> List a -> List (List a)
+segment = (l, xs) => {
+  t = List.length(xs)
+  perfect = t % l == 0
+  whole = Float.toInteger(Math.floor(t / l))
+  repeat = perfect ? whole : whole + 1
+  return l < 1 ? [xs] : List.repeatWith((i) => List.slice(i * l, (i + 1) * l, xs), repeat)
+}
+
+
+alias DealtState = { pile :: List Card, players :: List Player, visible :: List Card }
+
+deal :: String -> List Card -> List String -> DealtState
+deal = (seed, allCards, playerNames) => {
+  rand = Random.generateFromString(seed)
+  shuffled = rand.shuffle(allCards)
+  totalPlayers = List.length(playerNames)
+  return if (totalPlayers < 2 || totalPlayers > 7) {
+    { pile: [], players: [], visible: [] }
+  } else {
+    where(numberOfCardsByNumberOfPlayers(totalPlayers)) {
+      #[perPlayer, faceUp] =>
+        pipe(
+          segment(perPlayer),
+          cut(totalPlayers),
+          where {
+            #[dealt, rest] =>
+              pipe(
+                List.flatten,
+                cut(faceUp),
+                where {
+                  #[visible, pile] =>
+                    (
+                      {
+                        players: pipe(
+                          List.zip(playerNames),
+                          map(where { #[n, c] => Player(n, c) }),
+                        )(dealt),
+                        visible,
+                        pile,
+                      }
+                    )
+                },
+              )(rest)
+          },
+        )(shuffled)
+    }
+  }
+}
+
+main = () => {
+  deal("flower-cards-v1", deck, ["Brekk", "Clive"]) |> IO.pLog
+}
