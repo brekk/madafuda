@@ -24,11 +24,6 @@ export type Suit
   | Willow
   | Foxglove
 
-type CardState = Pile | Up | Held | Played | Discarded
-type PlayingCard = PlayingCard(CardState, Card)
-
-
-
 // Hikari = 20
 // Tane = 5
 // Tanzaku = 10
@@ -36,11 +31,12 @@ type PlayingCard = PlayingCard(CardState, Card)
 export type Value = Hikari | Tane | Tanzaku | Kasu
 export type Card = Card(Suit, Value)
 
+// name -> cardsInHand
 type Player = Player(String, List Card)
 
 
 export NAMED = {
-  crane: Card(Pine, Hikari),
+  stork: Card(Pine, Hikari),
   warbler: Card(Plum, Tane),
   sakura: Card(Cherry, Hikari),
   songbird: Card(Wisteria, Tane),
@@ -75,7 +71,7 @@ export BANNERS = {
 
 DECK :: List Card
 export DECK = [
-  NAMED.crane,
+  NAMED.stork,
   BANNERS.pine,
   Card(Pine, Kasu),
   Card(Pine, Kasu),
@@ -127,10 +123,9 @@ export DECK = [
 
 export alias Yaku = #[Card, Card, Card]
 
-// these are sorted by month order 
 YAKUS :: List Yaku
 export YAKUS = [
-  #[NAMED.crane, NAMED.sakura, NAMED.warbler],
+  #[NAMED.stork, NAMED.sakura, NAMED.warbler],
   #[NAMED.sakura, NAMED.moon, NAMED.sake],
   #[NAMED.butterflies, NAMED.sake, NAMED.deer],
   #[NAMED.pig, NAMED.birds, NAMED.deer],
@@ -172,19 +167,6 @@ pointCardsOnly = List.filter(
       true
   },
 )
-
-// assumes that the yaku is valid and sorted
-pointsForYaku :: Yaku -> Integer
-export pointsForYaku = where {
-  #[_, Card(Cherry, Hikari), _] =>
-    100
-
-  #[Card(Cherry, Hikari), _, _] =>
-    100
-
-  _ =>
-    50
-}
 
 toPointValue :: Value -> Integer
 toPointValue = where {
@@ -278,6 +260,9 @@ playerName = where {
     name
 }
 
+getPlayerByName :: String -> List Player -> Maybe Player
+getPlayerByName = (name, players) => List.find((p) => playerName(p) == name, players)
+
 nameOfPlayerAtIndex :: List Player -> Integer -> String
 nameOfPlayerAtIndex = (players, i) => pipe(
   playerAtIndex(i),
@@ -295,7 +280,6 @@ segment = (l, xs) => {
   repeat = perfect ? whole : whole + 1
   return l < 1 ? [xs] : List.repeatWith((i) => List.slice(i * l, (i + 1) * l, xs), repeat)
 }
-
 
 alias DealtState = { pile :: List Card, players :: List Player, visible :: List Card }
 
@@ -344,9 +328,32 @@ canMatchSuit = (cs, c) => where(c) {
 }
 canMatch :: List Card -> Card -> Boolean
 canMatch = (cs, c) => where(c) {
+  // the lightning / police can match any card
+  Card(Willow, Kasu) =>
+    true
+
   Card(a, suit) =>
     Fn.any(where { Card(b, suit2) => suit == suit2 && a != b }, cs)
 }
+cardInList :: List Card -> Card -> Boolean
+cardInList = (cs, c) => where(c) {
+  Card(a, suit) =>
+    Fn.any(where { Card(b, suit2) => suit == suit2 && a == b }, cs)
+}
+
+// assumes that the yaku is valid and sorted
+pointsForYaku :: Yaku -> Integer
+export pointsForYaku = where {
+  #[_, Card(Cherry, Hikari), _] =>
+    100
+
+  #[Card(Cherry, Hikari), _, _] =>
+    100
+
+  _ =>
+    50
+}
+
 
 matchableCards :: List Card -> Card -> List Card
 matchableCards = (cs, c) => where(c) {
@@ -357,61 +364,120 @@ matchableCards = (cs, c) => where(c) {
 playableCards :: List Card -> List Card -> List Card
 playableCards = (deck, hand) => List.filter(canMatch(hand), deck)
 
-// round :: GameState -> GameState
-// round = (state) => {}
+
+// We're separating cards by in-hand + up already, so PlayState only applies to cards which have been played for points
+type PlayState = Played(String) | Discarded
+type PlayingCard = PlayingCard(PlayState, Card)
+
+// active - whose turn is it?
+// played - includes both trash + cards played for points
+alias PlayableState = {
+  active :: String,
+  pile :: List Card,
+  played :: List PlayingCard,
+  players :: List Player,
+  visible :: List Card,
+}
+
+initialize :: DealtState -> PlayableState
+initialize = (state) => (
+  {
+    ...state,
+    played: [],
+    active: pipe(
+      .players,
+      List.nth(0),
+      map(playerName),
+      Maybe.fromMaybe("Nobody"),
+    )(state),
+  }
+)
+
+siftByOwner :: String -> PlayingCard -> Boolean
+siftByOwner = (owner, card) => where(card) {
+  PlayingCard(Played(other), _) =>
+    owner == other
+
+  _ =>
+    false
+}
+
+siftByUnowned :: PlayingCard -> Boolean
+siftByUnowned = where {
+  PlayingCard(Discarded, _) =>
+    true
+
+  _ =>
+    false
+}
+
+filterPlayedCards :: PlayState -> List PlayingCard -> List PlayingCard
+filterPlayedCards = (pState, cards) => where(pState) {
+  Played(by) =>
+    List.filter(siftByOwner(by), cards)
+
+  _ =>
+    List.filter(siftByUnowned, cards)
+}
+
+getPointCards :: List PlayingCard -> List PlayingCard
+getPointCards = List.reject(siftByUnowned)
+
+
+cardsFromPlayedCards :: List PlayingCard -> List Card
+cardsFromPlayedCards = map(where { PlayingCard(_, c) => c })
+
+getHand :: Player -> List Card
+getHand = where {
+  Player(_, cards) =>
+    cards
+}
+
+naiveMove :: String -> PlayableState -> Maybe Card
+naiveMove = (seed, state) => {
+  rand = Random.generateFromString(seed)
+  current = getPlayerByName(state.active, state.players)
+  return pipe(
+    chain(
+      pipe(
+        getHand,
+        playableCards(state.visible),
+        rand.pick,
+      ),
+    ),
+  )(current)
+}
+/*
+bestMove :: List Card -> List Card -> Player -> Card
+bestMove = (playedCards, visibleCards, player) => {
+  trash = pipe(
+    filterPlayedCards(Discarded),
+    cardsFromPlayedCards
+  )(playedCards)
+  return where (player) {
+    Player(me, hand) => do {
+      myPlayedCards = pipe(
+        filterPlayedCards(Played(me)),
+        cardsFromPlayedCards
+      )(playedCards)
+      matchableCards(hand) 
+    }
+  }
+}
+
+/*
+turn :: PlayableState -> PlayableState
+turn = (state) => {
+  current = getPlayerByName(state.active, state.players)
+}
+*/
+
 
 main = () => {
-  dealt = deal("flower-cards-v1", DECK, ["Brekk", "Clive"])
+  seed = "flower-cards-v1"
+  dealt = deal(seed, DECK, ["Brekk", "Clive"])
   IO.pLog(dealt)
-  map(
-    where {
-      Player(name, cards) =>
-        IO.trace(`${name} has chicken?`, hasCard(NAMED.chicken, cards))
-    },
-    dealt.players,
-  )
-  checkYaku(
-    #[NAMED.crane, NAMED.sakura, NAMED.warbler],
-    [NAMED.sakura, NAMED.warbler, NAMED.moon, NAMED.crane],
-  )
-    |> IO.trace("YAKU CHECK!")
-
-  matchYakus([NAMED.sakura, NAMED.warbler, NAMED.moon, NAMED.crane])
-    |> map(pointsForYaku)
-    |> IO.trace("FOUND YAKU!")
-
-  matchYakus(DECK) |> IO.pLog
-  map(
-    where {
-      Player(name, cards) =>
-        do {
-          IO.putLine(`${name}: POINT CARDS ONLY`)
-          x = pointCardsOnly(cards)
-          IO.pLog(x)
-          return x
-        }
-    },
-    dealt.players,
-  )
-
-  matchYakus(dealt.pile) |> IO.trace("matched in pile!")
-  canMatchSuit(dealt.pile, NAMED.warbler) |> IO.trace("Can I match the warbler to the pile?")
-  canMatchSuit(dealt.pile, NAMED.chicken) |> IO.trace("Can I match the chicken to the pile?")
-  canMatch(dealt.visible, NAMED.chicken)
-    |> IO.trace("Can I match the chicken to the face up cards?")
-  matchYakus([NAMED.sakura, NAMED.moon, NAMED.sake, NAMED.warbler, NAMED.crane])
-    |> IO.trace("double sakura!")
-  map(
-    where {
-      Player(name, cards) =>
-        do {
-          IO.putLine(`${name} can play these cards against the visible cards`)
-
-          x = playableCards(dealt.visible, cards)
-          IO.pLog(x)
-          return x
-        }
-    },
-    dealt.players,
-  )
+  state = initialize(dealt)
+  IO.cLog(state)
+  naiveMove(seed, state) |> IO.cTrace("yooo")
 }
