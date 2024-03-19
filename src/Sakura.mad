@@ -1,4 +1,6 @@
+import { EQ, GT, LT } from "Compare"
 import Float from "Float"
+import Fn from "Function"
 import IO from "IO"
 import List from "List"
 import Math from "Math"
@@ -41,7 +43,7 @@ export type Card = Card(Suit, Value)
 type Player = Player(String, List Card)
 
 
-export named = {
+export NAMED = {
   crane: Card(Pine, Hikari),
   warbler: Card(Plum, Tane),
   sakura: Card(Cherry, Hikari),
@@ -60,7 +62,7 @@ export named = {
   foxglove: Card(Foxglove, Tanzaku),
 }
 
-export banners = {
+export BANNERS = {
   pine: Card(Pine, Tanzaku),
   plum: Card(Plum, Tanzaku),
   cherry: Card(Cherry, Tanzaku),
@@ -75,54 +77,54 @@ export banners = {
 }
 
 
-deck :: List Card
-export deck = [
-  named.crane,
-  banners.pine,
+DECK :: List Card
+export DECK = [
+  NAMED.crane,
+  BANNERS.pine,
   Card(Pine, Kasu),
   Card(Pine, Kasu),
-  named.warbler,
-  banners.plum,
+  NAMED.warbler,
+  BANNERS.plum,
   Card(Plum, Kasu),
   Card(Plum, Kasu),
-  named.sakura,
-  banners.cherry,
+  NAMED.sakura,
+  BANNERS.cherry,
   Card(Cherry, Kasu),
   Card(Cherry, Kasu),
-  named.songbird,
-  banners.wisteria,
+  NAMED.songbird,
+  BANNERS.wisteria,
   Card(Wisteria, Kasu),
   Card(Wisteria, Kasu),
-  named.bridge,
-  banners.iris,
+  NAMED.bridge,
+  BANNERS.iris,
   Card(Iris, Kasu),
   Card(Iris, Kasu),
-  named.butterflies,
-  banners.peony,
+  NAMED.butterflies,
+  BANNERS.peony,
   Card(Peony, Kasu),
   Card(Peony, Kasu),
-  named.pig,
-  banners.clover,
+  NAMED.pig,
+  BANNERS.clover,
   Card(Clover, Kasu),
   Card(Clover, Kasu),
-  named.moon,
-  banners.grass,
+  NAMED.moon,
+  BANNERS.grass,
   Card(Grass, Kasu),
   Card(Grass, Kasu),
-  named.sake,
-  banners.chrysanthemum,
+  NAMED.sake,
+  BANNERS.chrysanthemum,
   Card(Chrysanthemum, Kasu),
   Card(Chrysanthemum, Kasu),
-  named.deer,
-  banners.maple,
+  NAMED.deer,
+  BANNERS.maple,
   Card(Maple, Kasu),
   Card(Maple, Kasu),
-  named.rainman,
-  named.swallow,
-  banners.willow,
-  named.police,
-  named.chicken,
-  named.foxglove,
+  NAMED.rainman,
+  NAMED.swallow,
+  BANNERS.willow,
+  NAMED.police,
+  NAMED.chicken,
+  NAMED.foxglove,
   Card(Foxglove, Kasu),
   Card(Foxglove, Kasu),
 ]
@@ -130,16 +132,37 @@ export deck = [
 export alias Yaku = #[Card, Card, Card]
 
 // these are sorted by month order 
-export yakus = [
-  #[named.crane, named.sakura, named.warbler],
-  #[named.sakura, named.moon, named.sake],
-  #[named.butterflies, named.sake, named.deer],
-  #[named.pig, named.birds, named.deer],
-  #[named.songbird, named.bridge, named.pig],
-  #[banners.pine, banners.plum, banners.cherry],
-  #[banners.wisteria, banners.iris, banners.clover],
-  #[banners.peony, banners.chrysanthemum, banners.maple],
+export YAKUS = [
+  #[NAMED.crane, NAMED.sakura, NAMED.warbler],
+  #[NAMED.sakura, NAMED.moon, NAMED.sake],
+  #[NAMED.butterflies, NAMED.sake, NAMED.deer],
+  #[NAMED.pig, NAMED.birds, NAMED.deer],
+  #[NAMED.songbird, NAMED.bridge, NAMED.pig],
+  #[BANNERS.pine, BANNERS.plum, BANNERS.cherry],
+  #[BANNERS.wisteria, BANNERS.iris, BANNERS.clover],
+  #[BANNERS.peony, BANNERS.chrysanthemum, BANNERS.maple],
 ]
+
+hasCard :: Card -> List Card -> Boolean
+hasCard = (c, cs) => Fn.any(
+  (k) => where(#[c, k]) {
+    #[Card(a, a2), Card(b, b2)] =>
+      a == b && a2 == b2
+  },
+  cs,
+)
+
+checkYaku :: Yaku -> List Card -> Boolean
+checkYaku = (yaku, cards) => {
+  sorted = sortCards(cards)
+  return where(yaku) {
+    #[a, b, c] =>
+      Fn.all(hasCard($, cards), [a, b, c])
+  }
+}
+
+hasYaku :: List Card -> Boolean
+hasYaku = (cards) => Fn.any(checkYaku($, cards), YAKUS)
 
 // assumes that the yaku is valid and sorted
 pointsForYaku :: Yaku -> Integer
@@ -152,6 +175,21 @@ export pointsForYaku = where {
 
   _ =>
     50
+}
+
+toPointValue :: Value -> Integer
+toPointValue = where {
+  Hikari =>
+    20
+
+  Tanzaku =>
+    10
+
+  Tane =>
+    5
+
+  _ =>
+    0
 }
 
 toOrdinalMonth :: Suit -> Integer
@@ -192,6 +230,25 @@ toOrdinalMonth = where {
   Foxglove =>
     11
 }
+
+
+sortCards :: List Card -> List Card
+sortCards = List.sortBy(
+  (a, b) => where(#[a, b]) {
+    #[Card(s1, v1), Card(s2, v2)] =>
+      do {
+        x = toOrdinalMonth(s1)
+        x2 = toPointValue(v1)
+        y = toOrdinalMonth(s2)
+        y2 = toPointValue(v1)
+        return if (x == y) {
+          x2 == y2 ? EQ : x2 < y2 ? GT : LT
+        } else {
+          x > y ? GT : LT
+        }
+      }
+  },
+)
 
 numberOfCardsByNumberOfPlayers :: Integer -> #[Integer, Integer]
 numberOfCardsByNumberOfPlayers = (i) => i == 2
@@ -252,14 +309,14 @@ deal = (seed, allCards, playerNames) => {
                 List.flatten,
                 cut(faceUp),
                 where {
-                  #[visible, pile] =>
+                  #[upCards, pile] =>
                     (
                       {
                         players: pipe(
                           List.zip(playerNames),
-                          map(where { #[n, c] => Player(n, c) }),
+                          map(where { #[n, c] => Player(n, sortCards(c)) }),
                         )(dealt),
-                        visible,
+                        visible: sortCards(upCards),
                         pile,
                       }
                     )
@@ -271,6 +328,24 @@ deal = (seed, allCards, playerNames) => {
   }
 }
 
+// round :: GameState -> GameState
+// round = (state) => {}
+
 main = () => {
-  deal("flower-cards-v1", deck, ["Brekk", "Clive"]) |> IO.pLog
+  dealt = deal("flower-cards-v1", DECK, ["Brekk", "Clive"])
+  IO.pLog(dealt)
+  map(
+    where {
+      Player(name, cards) =>
+        IO.trace(`${name} has chicken?`, hasCard(NAMED.chicken, cards))
+    },
+    dealt.players,
+  )
+  checkYaku(
+    #[NAMED.crane, NAMED.sakura, NAMED.warbler],
+    [NAMED.sakura, NAMED.warbler, NAMED.moon, NAMED.crane],
+  )
+    |> IO.trace("YAKU CHECK!")
+
+  hasYaku([NAMED.sakura, NAMED.warbler, NAMED.crane]) |> IO.trace("magic!")
 }
