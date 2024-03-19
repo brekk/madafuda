@@ -10,10 +10,6 @@ import Random from "Random"
 
 
 
-// import Random from "Random"
-
-
-
 export type Suit
   = Pine
   | Plum
@@ -132,6 +128,7 @@ export DECK = [
 export alias Yaku = #[Card, Card, Card]
 
 // these are sorted by month order 
+YAKUS :: List Yaku
 export YAKUS = [
   #[NAMED.crane, NAMED.sakura, NAMED.warbler],
   #[NAMED.sakura, NAMED.moon, NAMED.sake],
@@ -152,17 +149,29 @@ hasCard = (c, cs) => Fn.any(
   cs,
 )
 
+
 checkYaku :: Yaku -> List Card -> Boolean
-checkYaku = (yaku, cards) => {
-  sorted = sortCards(cards)
-  return where(yaku) {
-    #[a, b, c] =>
-      Fn.all(hasCard($, cards), [a, b, c])
-  }
+checkYaku = (yaku, cards) => where(yaku) {
+  #[a, b, c] =>
+    Fn.all(hasCard($, cards), [a, b, c])
 }
 
-hasYaku :: List Card -> Boolean
-hasYaku = (cards) => Fn.any(checkYaku($, cards), YAKUS)
+matchYakus :: List Card -> List Yaku
+matchYakus = (cards) => List.filter(checkYaku($, cards), YAKUS)
+
+hasAnyYaku :: List Card -> Boolean
+hasAnyYaku = (cards) => Fn.any(checkYaku($, cards), YAKUS)
+
+pointCardsOnly :: List Card -> List Card
+pointCardsOnly = List.filter(
+  where {
+    Card(_, Kasu) =>
+      false
+
+    _ =>
+      true
+  },
+)
 
 // assumes that the yaku is valid and sorted
 pointsForYaku :: Yaku -> Integer
@@ -328,6 +337,26 @@ deal = (seed, allCards, playerNames) => {
   }
 }
 
+canMatchSuit :: List Card -> Card -> Boolean
+canMatchSuit = (cs, c) => where(c) {
+  Card(_, suit) =>
+    Fn.any(where { Card(_, suit2) => suit == suit2 }, cs)
+}
+canMatch :: List Card -> Card -> Boolean
+canMatch = (cs, c) => where(c) {
+  Card(a, suit) =>
+    Fn.any(where { Card(b, suit2) => suit == suit2 && a != b }, cs)
+}
+
+matchableCards :: List Card -> Card -> List Card
+matchableCards = (cs, c) => where(c) {
+  Card(_, suit) =>
+    List.filter(where { Card(_, suit2) => suit == suit2 }, cs)
+}
+
+playableCards :: List Card -> List Card -> List Card
+playableCards = (deck, hand) => List.filter(canMatch(hand), deck)
+
 // round :: GameState -> GameState
 // round = (state) => {}
 
@@ -347,5 +376,42 @@ main = () => {
   )
     |> IO.trace("YAKU CHECK!")
 
-  hasYaku([NAMED.sakura, NAMED.warbler, NAMED.crane]) |> IO.trace("magic!")
+  matchYakus([NAMED.sakura, NAMED.warbler, NAMED.moon, NAMED.crane])
+    |> map(pointsForYaku)
+    |> IO.trace("FOUND YAKU!")
+
+  matchYakus(DECK) |> IO.pLog
+  map(
+    where {
+      Player(name, cards) =>
+        do {
+          IO.putLine(`${name}: POINT CARDS ONLY`)
+          x = pointCardsOnly(cards)
+          IO.pLog(x)
+          return x
+        }
+    },
+    dealt.players,
+  )
+
+  matchYakus(dealt.pile) |> IO.trace("matched in pile!")
+  canMatchSuit(dealt.pile, NAMED.warbler) |> IO.trace("Can I match the warbler to the pile?")
+  canMatchSuit(dealt.pile, NAMED.chicken) |> IO.trace("Can I match the chicken to the pile?")
+  canMatch(dealt.visible, NAMED.chicken)
+    |> IO.trace("Can I match the chicken to the face up cards?")
+  matchYakus([NAMED.sakura, NAMED.moon, NAMED.sake, NAMED.warbler, NAMED.crane])
+    |> IO.trace("double sakura!")
+  map(
+    where {
+      Player(name, cards) =>
+        do {
+          IO.putLine(`${name} can play these cards against the visible cards`)
+
+          x = playableCards(dealt.visible, cards)
+          IO.pLog(x)
+          return x
+        }
+    },
+    dealt.players,
+  )
 }
