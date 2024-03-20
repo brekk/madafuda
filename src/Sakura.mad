@@ -357,12 +357,15 @@ export pointsForYaku = where {
 
 matchableCards :: List Card -> Card -> List Card
 matchableCards = (cs, c) => where(c) {
+  Card(Willow, Kasu) =>
+    cs
+
   Card(_, suit) =>
     List.filter(where { Card(_, suit2) => suit == suit2 }, cs)
 }
 
 playableCards :: List Card -> List Card -> List Card
-playableCards = (deck, hand) => List.filter(canMatch(hand), deck)
+playableCards = (deck, hand) => List.filter(canMatch(deck), hand)
 
 
 // We're separating cards by in-hand + up already, so PlayState only applies to cards which have been played for points
@@ -419,6 +422,14 @@ filterPlayedCards = (pState, cards) => where(pState) {
   _ =>
     List.filter(siftByUnowned, cards)
 }
+rejectPlayedCards :: PlayState -> List PlayingCard -> List PlayingCard
+rejectPlayedCards = (pState, cards) => where(pState) {
+  Played(by) =>
+    List.reject(siftByOwner(by), cards)
+
+  _ =>
+    List.reject(siftByUnowned, cards)
+}
 
 getPointCards :: List PlayingCard -> List PlayingCard
 getPointCards = List.reject(siftByUnowned)
@@ -447,23 +458,27 @@ naiveMove = (seed, state) => {
     ),
   )(current)
 }
-/*
-bestMove :: List Card -> List Card -> Player -> Card
-bestMove = (playedCards, visibleCards, player) => {
-  trash = pipe(
-    filterPlayedCards(Discarded),
-    cardsFromPlayedCards
-  )(playedCards)
-  return where (player) {
-    Player(me, hand) => do {
-      myPlayedCards = pipe(
-        filterPlayedCards(Played(me)),
-        cardsFromPlayedCards
-      )(playedCards)
-      matchableCards(hand) 
-    }
-  }
+
+// weightCard :: List PlayingCard , card-> Card -> Integer
+weightCard = (player, playedCards, card) => {
+  played = getPointCards(playedCards)
+  currentPlayer = Played(playerName(player))
+  myCards = filterPlayedCards(currentPlayer, played)
+  notMyCards = rejectPlayedCards(currentPlayer, played)
+  weigh = pipe(
+    cardsFromPlayedCards,
+    List.append(card),
+    matchYakus,
+  )
+  return #[weigh(myCards), weigh(notMyCards)]
 }
+
+// bestMove :: List PlayingCard -> List Card -> List Card -> Card
+bestMove = (player, playedCards, upCards, hand) => pipe(
+  playableCards(upCards),
+  sortCards,
+  map(weightCard(player, playedCards)),
+)(hand)
 
 /*
 turn :: PlayableState -> PlayableState
@@ -476,8 +491,41 @@ turn = (state) => {
 main = () => {
   seed = "flower-cards-v1"
   dealt = deal(seed, DECK, ["Brekk", "Clive"])
-  IO.pLog(dealt)
+  // IO.pLog(dealt)
   state = initialize(dealt)
-  IO.cLog(state)
+  IO.cTrace("Initial Hands!", state.players)
   naiveMove(seed, state) |> IO.cTrace("yooo")
+  playedCards = [
+    PlayingCard(Played("Brekk"), Card(Cherry, Hikari)),
+    PlayingCard(Played("Clive"), Card(Iris, Tane)),
+    PlayingCard(Played("Clive"), Card(Clover, Tanzaku)),
+    PlayingCard(Discarded, Card(Wisteria, Kasu)),
+    PlayingCard(Discarded, Card(Clover, Kasu)),
+    PlayingCard(Played("Clive"), Card(Pine, Tanzaku)),
+    PlayingCard(Played("Clive"), Card(Peony, Tanzaku)),
+    PlayingCard(Discarded, Card(Chrysanthemum, Kasu)),
+    PlayingCard(Discarded, Card(Plum, Kasu)),
+    PlayingCard(Discarded, Card(Cherry, Kasu)),
+    PlayingCard(Played("Clive"), Card(Grass, Tanzaku)),
+    PlayingCard(Played("Clive"), Card(Plum, Tanzaku)),
+    PlayingCard(Discarded, Card(Grass, Kasu)),
+    PlayingCard(Discarded, Card(Peony, Kasu)),
+    PlayingCard(Discarded, Card(Iris, Kasu)),
+    PlayingCard(Discarded, Card(Maple, Kasu)),
+    PlayingCard(Played("Clive"), Card(Wisteria, Tanzaku)),
+    PlayingCard(Played("Clive"), Card(Chrysanthemum, Tanzaku)),
+    PlayingCard(Played("Brekk"), Card(Chrysanthemum, Tane)),
+    PlayingCard(Played("Brekk"), Card(Peony, Tane)),
+    PlayingCard(Discarded, Card(Wisteria, Kasu)),
+    PlayingCard(Discarded, Card(Iris, Kasu)),
+    PlayingCard(Played("Brekk"), Card(Grass, Hikari)),
+    PlayingCard(Discarded, Card(Clover, Kasu)),
+  ]
+  IO.cTrace("Cards in Play!", playedCards)
+  pipe(
+    List.nth(0),
+    Maybe.fromMaybe(Player("Nobody", [])),
+    (player) => bestMove(player, playedCards, state.visible, getHand(player)),
+    IO.pTrace("what?"),
+  )(state.players)
 }
