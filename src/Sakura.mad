@@ -24,12 +24,17 @@ export type Suit
   | Willow
   | Foxglove
 
+
 // Hikari = 20
 // Tane = 5
 // Tanzaku = 10
 // Kasu = 0
 export type Value = Hikari | Tane | Tanzaku | Kasu
 export type Card = Card(Suit, Value)
+
+derive Comparable Suit
+derive Comparable Value
+derive Comparable Card
 
 // name -> cardsInHand
 type Player = Player(String, List Card)
@@ -44,7 +49,7 @@ export NAMED = {
   butterflies: Card(Peony, Tane),
   pig: Card(Clover, Tane),
   moon: Card(Grass, Hikari),
-  birds: Card(Grass, Tanzaku),
+  birds: Card(Grass, Tane),
   sake: Card(Chrysanthemum, Tane),
   deer: Card(Maple, Tane),
   police: Card(Willow, Kasu),
@@ -145,6 +150,13 @@ hasCard = (c, cs) => Fn.any(
 )
 
 
+
+partialYaku :: Yaku -> List Card -> Boolean
+partialYaku = (yaku, cards) => where(yaku) {
+  #[a, b, c] =>
+    Fn.any(hasCard($, cards), [a, b, c])
+}
+
 checkYaku :: Yaku -> List Card -> Boolean
 checkYaku = (yaku, cards) => where(yaku) {
   #[a, b, c] =>
@@ -156,6 +168,61 @@ matchYakus = (cards) => List.filter(checkYaku($, cards), YAKUS)
 
 hasAnyYaku :: List Card -> Boolean
 hasAnyYaku = (cards) => Fn.any(checkYaku($, cards), YAKUS)
+
+matchCardForYaku :: Yaku -> Card -> Maybe Card
+matchCardForYaku = (yaku, card) => where(yaku) {
+  #[a, b, c] =>
+    hasCard(card, [a, b, c]) ? Maybe.Just(card) : Maybe.Nothing
+}
+
+matchCardsForYaku :: Yaku -> List Card -> List (Maybe Card)
+matchCardsForYaku = (yaku, cards) => pipe(
+  map(matchCardForYaku(yaku)),
+  List.filter(
+    where {
+      Maybe.Nothing =>
+        false
+
+      _ =>
+        true
+    },
+  ),
+)(cards)
+
+getPossibleCardsForYakus :: List Card -> List (Maybe Card)
+getPossibleCardsForYakus = (cards) => {
+  increment = (x) => x + 1
+  dict = Dictionary.empty
+  // getCount :: Comparable Card => Card -> Integer
+  getCount = pipe(
+    map(Dictionary.get($, dict)),
+    Maybe.fromMaybe(0),
+  )
+  return pipe(
+    chain(matchCardsForYaku($, cards)),
+    map(
+      (j) => {
+        where(j) {
+          Maybe.Just(c) =>
+            Dictionary.includes(c, dict)
+              ? Dictionary.insert(c, 1, dict)
+              : Dictionary.update(increment, c, dict)
+
+          Maybe.Nothing =>
+            dict
+        }
+        return j
+      },
+    ),
+    List.sortBy(
+      (a, b) => {
+        aCount = getCount(a)
+        bCount = getCount(b)
+        return aCount == bCount ? EQ : aCount > bCount ? GT : LT
+      },
+    ),
+  )(YAKUS)
+}
 
 pointCardsOnly :: List Card -> List Card
 pointCardsOnly = List.filter(
@@ -240,6 +307,7 @@ sortCards = List.sortBy(
       }
   },
 )
+
 
 numberOfCardsByNumberOfPlayers :: Integer -> #[Integer, Integer]
 numberOfCardsByNumberOfPlayers = (i) => i == 2
@@ -434,7 +502,6 @@ rejectPlayedCards = (pState, cards) => where(pState) {
 getPointCards :: List PlayingCard -> List PlayingCard
 getPointCards = List.reject(siftByUnowned)
 
-
 cardsFromPlayedCards :: List PlayingCard -> List Card
 cardsFromPlayedCards = map(where { PlayingCard(_, c) => c })
 
@@ -460,15 +527,26 @@ naiveMove = (seed, state) => {
 }
 
 // weightCard :: List PlayingCard , card-> Card -> Integer
-weightCard = (player, playedCards, card) => {
+weighCards = (player, playedCards, cards) => {
   played = getPointCards(playedCards)
   currentPlayer = Played(playerName(player))
   myCards = filterPlayedCards(currentPlayer, played)
   notMyCards = rejectPlayedCards(currentPlayer, played)
   weigh = pipe(
     cardsFromPlayedCards,
-    List.append(card),
-    matchYakus,
+    (list) => map(
+      (card) => pipe(
+        List.append(card),
+        matchYakus,
+      )(list),
+    )(cards),
+    List.sortBy(
+      (a, b) => {
+        al = List.length(a)
+        bl = List.length(b)
+        return al == bl ? EQ : al < bl ? GT : LT
+      },
+    ),
   )
   return #[weigh(myCards), weigh(notMyCards)]
 }
@@ -477,8 +555,9 @@ weightCard = (player, playedCards, card) => {
 bestMove = (player, playedCards, upCards, hand) => pipe(
   playableCards(upCards),
   sortCards,
-  map(weightCard(player, playedCards)),
+  weighCards(player, playedCards),
 )(hand)
+
 
 /*
 turn :: PlayableState -> PlayableState
@@ -487,11 +566,14 @@ turn = (state) => {
 }
 */
 
+/////////////////////////////////
+
+
 
 main = () => {
   seed = "flower-cards-v1"
   dealt = deal(seed, DECK, ["Brekk", "Clive"])
-  // IO.pLog(dealt)
+  IO.pLog(dealt)
   state = initialize(dealt)
   IO.cTrace("Initial Hands!", state.players)
   naiveMove(seed, state) |> IO.cTrace("yooo")
@@ -521,11 +603,23 @@ main = () => {
     PlayingCard(Played("Brekk"), Card(Grass, Hikari)),
     PlayingCard(Discarded, Card(Clover, Kasu)),
   ]
-  IO.cTrace("Cards in Play!", playedCards)
+  // IO.cTrace("Cards in Play!", playedCards)
   pipe(
     List.nth(0),
     Maybe.fromMaybe(Player("Nobody", [])),
     (player) => bestMove(player, playedCards, state.visible, getHand(player)),
     IO.pTrace("what?"),
+  )(state.players)
+
+  pipe(
+    map(
+      where {
+        Player(name, cards) =>
+          IO.pTrace(
+            `${name} can make yakus with the following possible cards`,
+            getPossibleCardsForYakus(cards),
+          )
+      },
+    ),
   )(state.players)
 }
