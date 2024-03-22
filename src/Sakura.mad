@@ -536,6 +536,8 @@ naiveMove = (seed, state) => {
   )(current)
 }
 
+// this matches best move by number of possible matches,
+// but does not yet capture the point value of the given cards
 weighBestMove :: List Card -> List Card
 weighBestMove = (cards) => pipe(
   getPossibleCardsForYakus,
@@ -598,9 +600,30 @@ main = () => {
       where {
         Player(name, cards) =>
           IO.pTrace(
-            `${name} can make yakus with the following possible cards`,
+            `${name} can make yakus with the following possible cards in their hand`,
             weighBestMove(cards),
           )
+      },
+    ),
+  )(state.players)
+  pipe(
+    map(
+      where {
+        Player(name, cards) =>
+          pipe(
+            List.concat(
+              pipe(
+                filterPlayedCards(Played(name)),
+                cardsFromPlayedCards,
+              )(playedCards),
+            ),
+            weighBestMove,
+            IO.pTrace(
+              `${
+                name
+              } can make yakus with the cards in their hand with respect to the cards they've already captured`,
+            ),
+          )(cards)
       },
     ),
   )(state.players)
