@@ -1,0 +1,206 @@
+import { EQ, GT, LT } from "Compare"
+import List from "List"
+
+import { caseN2, report } from "Study"
+
+import {
+  BANNERS,
+  Card,
+  Cherry,
+  Chrysanthemum,
+  Clover,
+  DECK,
+  Foxglove,
+  Grass,
+  Hikari,
+  Iris,
+  Kasu,
+  Maple,
+  NAMED,
+  Peony,
+  Pine,
+  Plum,
+  Tane,
+  Tanzaku,
+  Willow,
+  Wisteria,
+  canMatch,
+  // canMatchSuit,
+  cardInList,
+  compareCards,
+  // getValue,
+
+  // sortCards,
+  // toOrdinalMonth,
+  // toPointValue,
+  compareValue,
+  getSuit,
+  hasCard,
+  matchableCards,
+  pointCardsOnly,
+  serializeCard,
+  serializeSuit,
+  serializeValue,
+  sortCards,
+} from "@/Deck"
+
+
+
+report(
+  caseN2(compareValue),
+  "compareValue",
+  [
+    #[#[Kasu, Tane], LT],
+    #[#[Kasu, Hikari], LT],
+    #[#[Kasu, Tanzaku], LT],
+    #[#[Kasu, Kasu], EQ],
+    #[#[Tane, Kasu], GT],
+    #[#[Tane, Tane], EQ],
+    #[#[Tane, Hikari], GT],
+    #[#[Tane, Tanzaku], GT],
+    #[#[Tanzaku, Tanzaku], EQ],
+    #[#[Tanzaku, Tane], GT],
+    #[#[Hikari, Tane], GT],
+    #[#[Hikari, Kasu], GT],
+    #[#[Hikari, Hikari], EQ],
+    #[#[Hikari, Tanzaku], GT],
+  ],
+)
+
+report(
+  hasCard(NAMED.sakura),
+  "hasCard",
+  [#[[NAMED.sakura, BANNERS.willow], true], #[[Card(Wisteria, Kasu), BANNERS.willow], false]],
+)
+
+report(getSuit, "getSuit", [#[NAMED.sakura, Cherry], #[Card(Wisteria, Tane), Wisteria]])
+
+report(
+  serializeSuit,
+  "serializeSuit",
+  [
+    #[NAMED.sakura, "2"],
+    #[NAMED.stork, "0"],
+    #[NAMED.bridge, "4"],
+    #[NAMED.warbler, "1"],
+    #[NAMED.butterflies, "5"],
+  ],
+)
+report(serializeValue, "serializeValue", [#[NAMED.sakura, "20"]])
+report(
+  serializeCard,
+  "serializeCard",
+  [
+    #[NAMED.stork, "0-20"],
+    #[BANNERS.pine, "0-10"],
+    #[Card(Pine, Kasu), "0-0"],
+    #[Card(Pine, Kasu), "0-0"],
+    #[NAMED.warbler, "1-5"],
+    #[BANNERS.plum, "1-10"],
+    #[Card(Plum, Kasu), "1-0"],
+    #[Card(Plum, Kasu), "1-0"],
+    #[NAMED.sakura, "2-20"],
+    #[BANNERS.cherry, "2-10"],
+    #[Card(Cherry, Kasu), "2-0"],
+    #[Card(Cherry, Kasu), "2-0"],
+    #[NAMED.songbird, "3-5"],
+    #[BANNERS.wisteria, "3-10"],
+    #[Card(Wisteria, Kasu), "3-0"],
+    #[Card(Wisteria, Kasu), "3-0"],
+    #[NAMED.bridge, "4-5"],
+    #[BANNERS.iris, "4-10"],
+    #[Card(Iris, Kasu), "4-0"],
+    #[Card(Iris, Kasu), "4-0"],
+    #[NAMED.butterflies, "5-5"],
+    #[BANNERS.peony, "5-10"],
+    #[Card(Peony, Kasu), "5-0"],
+    #[Card(Peony, Kasu), "5-0"],
+    #[NAMED.pig, "6-5"],
+    #[BANNERS.clover, "6-10"],
+    #[Card(Clover, Kasu), "6-0"],
+    #[Card(Clover, Kasu), "6-0"],
+    #[NAMED.moon, "7-20"],
+    #[BANNERS.grass, "7-10"],
+    #[Card(Grass, Kasu), "7-0"],
+    #[Card(Grass, Kasu), "7-0"],
+    #[NAMED.sake, "8-5"],
+    #[BANNERS.chrysanthemum, "8-10"],
+    #[Card(Chrysanthemum, Kasu), "8-0"],
+    #[Card(Chrysanthemum, Kasu), "8-0"],
+    #[NAMED.deer, "9-5"],
+    #[BANNERS.maple, "9-10"],
+    #[Card(Maple, Kasu), "9-0"],
+    #[Card(Maple, Kasu), "9-0"],
+    #[NAMED.rainman, "10-5"],
+    #[NAMED.swallow, "10-5"],
+    #[BANNERS.willow, "10-10"],
+    #[NAMED.police, "10-0"],
+    #[NAMED.chicken, "11-20"],
+    #[NAMED.foxglove, "11-10"],
+    #[Card(Foxglove, Kasu), "11-0"],
+    #[Card(Foxglove, Kasu), "11-0"],
+  ],
+)
+
+report(
+  matchableCards(List.slice(0, 10, DECK)),
+  "matchableCards",
+  [
+    #[NAMED.stork, [Card(Pine, Hikari), Card(Cherry, Hikari)]],
+    #[BANNERS.pine, [Card(Pine, Tanzaku), Card(Plum, Tanzaku), Card(Cherry, Tanzaku)]],
+    #[NAMED.police, List.slice(0, 10, DECK)],
+  ],
+)
+
+report(
+  compareCards(NAMED.stork),
+  "compareCards",
+  [
+    #[NAMED.stork, EQ],
+    #[BANNERS.pine, EQ],
+    #[Card(Pine, Kasu), EQ],
+    #[NAMED.sakura, LT],
+    #[BANNERS.cherry, LT],
+    #[Card(Cherry, Kasu), LT],
+  ],
+)
+
+report(
+  cardInList(List.slice(0, 10, DECK)),
+  "cardInList",
+  [#[NAMED.stork, true], #[NAMED.police, false]],
+)
+
+report(sortCards, "sortCards", [#[DECK, DECK]])
+
+report(
+  pointCardsOnly,
+  "pointCardsOnly",
+  [
+    #[
+      List.slice(0, 10, DECK),
+      [
+        Card(Pine, Hikari),
+        Card(Pine, Tanzaku),
+        Card(Plum, Tane),
+        Card(Plum, Tanzaku),
+        Card(Cherry, Hikari),
+        Card(Cherry, Tanzaku),
+      ],
+    ],
+  ],
+)
+
+report(
+  canMatch(List.slice(0, 10, DECK)),
+  "canMatch",
+  [#[NAMED.sakura, true], #[NAMED.police, true], #[BANNERS.willow, true]],
+)
+
+/*
+report(
+  canMatchSuit(List.slice(0, 10, DECK)),
+  "canMatchSuit",
+  [#[NAMED.sakura, true], #[NAMED.police, true], #[BANNERS.chrysanthemum, false]],
+)
+*/

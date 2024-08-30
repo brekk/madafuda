@@ -31,35 +31,37 @@ export type Card = Card(Suit, Value)
 // derive Comparable Card
 
 instance Comparable Value {
-  compare = (a, b) => where(#[a, b]) {
-    #[Hikari, Hikari] =>
-      EQ
-
-    #[Hikari, _] =>
-      GT
-
-    #[Tanzaku, Tanzaku] =>
-      EQ
-
-    #[Tanzaku, _] =>
-      GT
-
-    #[Tane, Tane] =>
-      EQ
-
-    #[Tane, _] =>
-      GT
-
-    #[Kasu, Kasu] =>
-      EQ
-
-    _ =>
-      LT
-  }
+  compare = compareValue
 }
 
 instance Comparable Card {
   compare = compareCards
+}
+
+export compareValue = (a, b) => where(#[a, b]) {
+  #[Hikari, Hikari] =>
+    EQ
+
+  #[Hikari, _] =>
+    GT
+
+  #[Tanzaku, Tanzaku] =>
+    EQ
+
+  #[Tanzaku, _] =>
+    GT
+
+  #[Tane, Tane] =>
+    EQ
+
+  #[Tane, _] =>
+    GT
+
+  #[Kasu, Kasu] =>
+    EQ
+
+  _ =>
+    LT
 }
 
 // name -> cardsInHand
@@ -171,14 +173,14 @@ export getValue = where {
 }
 
 serializeSuit :: Card -> String
-serializeSuit = pipe(
+export serializeSuit = pipe(
   getSuit,
   toOrdinalMonth,
   show,
 )
 
 serializeValue :: Card -> String
-serializeValue = pipe(
+export serializeValue = pipe(
   getValue,
   toPointValue,
   show,
@@ -243,7 +245,7 @@ export toOrdinalMonth = where {
 }
 
 compareCards :: Card -> Card -> Comparison
-compareCards = (a, b) => where(#[a, b]) {
+export compareCards = (a, b) => where(#[a, b]) {
   #[Card(s1, v1), Card(s2, v2)] =>
     do {
       x = toOrdinalMonth(s1)
@@ -251,7 +253,7 @@ compareCards = (a, b) => where(#[a, b]) {
       y = toOrdinalMonth(s2)
       y2 = toPointValue(v1)
       return if (x == y) {
-        x2 == y2 ? EQ : x2 < y2 ? GT : LT
+        x2 == y2 ? EQ : x2 < y2 ? LT : GT
       } else {
         x > y ? GT : LT
       }
@@ -272,11 +274,14 @@ export pointCardsOnly = filter(
   },
 )
 
+/*
 canMatchSuit :: List Card -> Card -> Boolean
 export canMatchSuit = (cs, c) => where(c) {
   Card(_, suit) =>
     any(where { Card(_, suit2) => suit == suit2 }, cs)
 }
+*/
+
 canMatch :: List Card -> Card -> Boolean
 export canMatch = (cs, c) => where(c) {
   // the lightning / police can match any card

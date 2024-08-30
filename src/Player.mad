@@ -11,8 +11,8 @@ import { Card } from "@/Deck"
 
 export type Player = Player(String, List Card)
 
-numberOfCardsByNumberOfPlayers :: Integer -> #[Integer, Integer]
-export numberOfCardsByNumberOfPlayers = (i) => i == 2
+cardsPerPlayer :: Integer -> #[Integer, Integer]
+export cardsPerPlayer = (i) => i == 2
   ? #[8, 8]
   : i == 3
     ? #[7, 6]

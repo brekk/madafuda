@@ -10,7 +10,7 @@ import Random from "Random"
 
 import { canMatch, sortCards } from "@/Deck"
 import { cut, segment } from "@/List"
-import { Player, getPlayerByName, numberOfCardsByNumberOfPlayers, playerName } from "@/Player"
+import { Player, cardsPerPlayer, getPlayerByName, playerName } from "@/Player"
 import { getPossibleCardsForYakus } from "@/Yaku"
 
 
@@ -28,7 +28,7 @@ export deal = (seed, allCards, playerNames) => {
   return if (totalPlayers < 2 || totalPlayers > 7) {
     { pile: [], players: [], visible: [] }
   } else {
-    where(numberOfCardsByNumberOfPlayers(totalPlayers)) {
+    where(cardsPerPlayer(totalPlayers)) {
       #[perPlayer, faceUp] =>
         pipe(
           segment(perPlayer),
