@@ -1,0 +1,29 @@
+import { caseN2, report } from "Study"
+
+import {
+  Player,
+  cardsPerPlayer,
+  getPlayerByName,
+  nameOfPlayerAtIndex,
+  playerAtIndex,
+  playerName,
+} from "@/Player"
+
+
+
+report(
+  cardsPerPlayer,
+  "cardsPerPlayer",
+  [
+    #[1, #[-1, -1]],
+    #[2, #[8, 8]],
+    #[3, #[7, 6]],
+    #[4, #[5, 8]],
+    #[5, #[4, 8]],
+    #[6, #[3, 12]],
+    #[7, #[3, 6]],
+    #[8, #[-1, -1]],
+  ],
+)
+
+report(playerName, "playerName", [#[Player("Poisson", []), "Poisson"]])

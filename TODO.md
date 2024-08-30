@@ -1,1 +1,2 @@
  - [x] - s/numberOfCardsByNumberOfPlayers/cardsPerPlayer/g
+ - [ ] - playerAtIndex should just be nth
