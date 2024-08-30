@@ -1,0 +1,169 @@
+import type { Card } from "@/Deck"
+
+
+
+playableCards :: List Card -> List Card -> List Card
+export playableCards = (deck, hand) => List.filter(canMatch(deck), hand)
+
+alias DealtState = { pile :: List Card, players :: List Player, visible :: List Card }
+
+deal :: String -> List Card -> List String -> DealtState
+export deal = (seed, allCards, playerNames) => {
+  rand = Random.generateFromString(seed)
+  shuffled = Random.shuffle(allCards, rand)
+  totalPlayers = List.length(playerNames)
+  return if (totalPlayers < 2 || totalPlayers > 7) {
+    { pile: [], players: [], visible: [] }
+  } else {
+    where(numberOfCardsByNumberOfPlayers(totalPlayers)) {
+      #[perPlayer, faceUp] =>
+        pipe(
+          segment(perPlayer),
+          cut(totalPlayers),
+          where {
+            #[dealt, rest] =>
+              pipe(
+                List.flatten,
+                cut(faceUp),
+                where {
+                  #[upCards, pile] =>
+                    (
+                      {
+                        players: pipe(
+                          List.zip(playerNames),
+                          map(where { #[n, c] => Player(n, sortCards(c)) }),
+                        )(dealt),
+                        visible: sortCards(upCards),
+                        pile,
+                      }
+                    )
+                },
+              )(rest)
+          },
+        )(shuffled)
+    }
+  }
+}
+
+
+
+
+// We're separating cards by in-hand + up already, so PlayState only applies to cards which have been played for points
+export type PlayState = Played(String) | Discarded
+export type PlayingCard = PlayingCard(PlayState, Card)
+
+// active - whose turn is it?
+// played - includes both trash + cards played for points
+export alias PlayableState = {
+  active :: String,
+  pile :: List Card,
+  played :: List PlayingCard,
+  players :: List Player,
+  visible :: List Card,
+}
+
+initialize :: DealtState -> PlayableState
+export initialize = (state) => (
+  {
+    ...state,
+    played: [],
+    active: pipe(
+      .players,
+      List.nth(0),
+      map(playerName),
+      Maybe.fromMaybe("Nobody"),
+    )(state),
+  }
+)
+
+siftByOwner :: String -> PlayingCard -> Boolean
+export siftByOwner = (owner, card) => where(card) {
+  PlayingCard(Played(other), _) =>
+    owner == other
+
+  _ =>
+    false
+}
+
+siftByUnowned :: PlayingCard -> Boolean
+export siftByUnowned = where {
+  PlayingCard(Discarded, _) =>
+    true
+
+  _ =>
+    false
+}
+
+filterPlayedCards :: PlayState -> List PlayingCard -> List PlayingCard
+export filterPlayedCards = (pState, cards) => where(pState) {
+  Played(by) =>
+    List.filter(siftByOwner(by), cards)
+
+  _ =>
+    List.filter(siftByUnowned, cards)
+}
+rejectPlayedCards :: PlayState -> List PlayingCard -> List PlayingCard
+export rejectPlayedCards = (pState, cards) => where(pState) {
+  Played(by) =>
+    List.reject(siftByOwner(by), cards)
+
+  _ =>
+    List.reject(siftByUnowned, cards)
+}
+
+getPointCards :: List PlayingCard -> List PlayingCard
+export getPointCards = List.reject(siftByUnowned)
+
+cardsFromPlayedCards :: List PlayingCard -> List Card
+export cardsFromPlayedCards = map(where { PlayingCard(_, c) => c })
+
+getHand :: Player -> List Card
+export getHand = where {
+  Player(_, cards) =>
+    cards
+}
+
+naiveMove :: String -> PlayableState -> Maybe Card
+export naiveMove = (seed, state) => {
+  rand = Random.generateFromString(seed)
+  current = getPlayerByName(state.active, state.players)
+  return pipe(
+    chain(
+      pipe(
+        getHand,
+        playableCards(state.visible),
+        Random.pick($, rand),
+      ),
+    ),
+  )(current)
+}
+
+moveDictionary :: List (Maybe Card) -> Dictionary Card Integer
+export moveDictionary = (cards) => pipe(
+  List.reduce(
+    (agg, mCard) => where(mCard) {
+      Maybe.Just(c) =>
+        Dict.includes(c, agg) ? Dict.update((x) => x + 1, c, agg) : Dict.insert(c, 1, agg)
+
+      _ =>
+        agg
+    },
+    Dict.empty,
+  ),
+)(cards)
+
+// this matches best move by number of possible matches,
+// but does not yet capture the point value of the given cards
+weighBestMove :: List Card -> List Card
+export weighBestMove = (cards) => pipe(
+  getPossibleCardsForYakus,
+  moveDictionary,
+  (dict) => {
+    start = pipe(
+      Dict.values,
+      List.first,
+      Maybe.fromMaybe(1),
+    )(dict)
+    return Dict.reduce((k, v, ks) => { return v >= start ? [k, ...ks] : ks }, [], dict)
+  },
+)(cards)

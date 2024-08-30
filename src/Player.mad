@@ -1,0 +1,35 @@
+import type { Maybe } from "Maybe"
+
+import type { Card } from "@/Deck"
+
+
+
+export type Player = Player(String, List Card)
+
+numberOfCardsByNumberOfPlayers :: Integer -> #[Integer, Integer]
+export numberOfCardsByNumberOfPlayers = (i) => i == 2
+  ? #[8, 8]
+  : i == 3
+    ? #[7, 6]
+    : i == 4 ? #[5, 8] : i == 5 ? #[4, 8] : i == 6 ? #[3, 12] : i == 7 ? #[3, 6] : #[-1, -1]
+
+playerAtIndex :: Integer -> List Player -> Player
+export playerAtIndex = (i, players) => pipe(
+  List.nth(i),
+  Maybe.fromMaybe(Player("Nobody", [])),
+)(players)
+
+playerName :: Player -> String
+export playerName = where {
+  Player(name, _) =>
+    name
+}
+
+getPlayerByName :: String -> List Player -> Maybe Player
+export getPlayerByName = (name, players) => List.find((p) => playerName(p) == name, players)
+
+nameOfPlayerAtIndex :: List Player -> Integer -> String
+export nameOfPlayerAtIndex = (players, i) => pipe(
+  playerAtIndex(i),
+  playerName,
+)(players)

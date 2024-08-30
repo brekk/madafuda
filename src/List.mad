@@ -1,0 +1,17 @@
+import Float from "Float"
+import List from "List"
+import Math from "Math"
+
+
+
+cut :: Integer -> List a -> #[List a, List a]
+export cut = (a, xs) => #[List.slice(0, a, xs), List.slice(a, List.length(xs), xs)]
+
+segment :: Integer -> List a -> List (List a)
+export segment = (l, xs) => {
+  t = List.length(xs)
+  perfect = t % l == 0
+  whole = Float.toInteger(Math.floor(t / l))
+  repeat = perfect ? whole : whole + 1
+  return l < 1 ? [xs] : List.repeatWith((i) => List.slice(i * l, (i + 1) * l, xs), repeat)
+}

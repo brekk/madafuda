@@ -1,0 +1,64 @@
+import type { Maybe } from "Maybe"
+
+import type { Card } from "@/Deck"
+
+import List from "List"
+
+import { BANNERS, NAMED } from "@/Deck"
+
+
+
+export alias Yaku = #[Card, Card, Card]
+
+YAKUS :: List Yaku
+export YAKUS = [
+  #[NAMED.stork, NAMED.sakura, NAMED.warbler],
+  #[NAMED.sakura, NAMED.moon, NAMED.sake],
+  #[NAMED.butterflies, NAMED.sake, NAMED.deer],
+  #[NAMED.pig, NAMED.birds, NAMED.deer],
+  #[NAMED.songbird, NAMED.bridge, NAMED.pig],
+  #[BANNERS.pine, BANNERS.plum, BANNERS.cherry],
+  #[BANNERS.wisteria, BANNERS.iris, BANNERS.clover],
+  #[BANNERS.peony, BANNERS.chrysanthemum, BANNERS.maple],
+]
+
+partialYaku :: Yaku -> List Card -> Boolean
+export partialYaku = (yaku, cards) => where(yaku) {
+  #[a, b, c] =>
+    List.any(hasCard($, cards), [a, b, c])
+}
+
+checkYaku :: Yaku -> List Card -> Boolean
+export checkYaku = (yaku, cards) => where(yaku) {
+  #[a, b, c] =>
+    List.all(hasCard($, cards), [a, b, c])
+}
+
+matchYakus :: List Card -> List Yaku
+export matchYakus = (cards) => List.filter(checkYaku($, cards), YAKUS)
+
+hasAnyYaku :: List Card -> Boolean
+export hasAnyYaku = (cards) => List.any(checkYaku($, cards), YAKUS)
+
+matchCardForYaku :: Yaku -> Card -> Maybe Card
+export matchCardForYaku = (yaku, card) => where(yaku) {
+  #[a, b, c] =>
+    hasCard(card, [a, b, c]) ? Maybe.Just(card) : Maybe.Nothing
+}
+
+matchCardsForYaku :: Yaku -> List Card -> List (Maybe Card)
+export matchCardsForYaku = (yaku, cards) => pipe(
+  map(matchCardForYaku(yaku)),
+  List.filter(
+    where {
+      Maybe.Nothing =>
+        false
+
+      _ =>
+        true
+    },
+  ),
+)(cards)
+
+getPossibleCardsForYakus :: List Card -> List (Maybe Card)
+export getPossibleCardsForYakus = (cards) => chain(matchCardsForYaku($, cards), YAKUS)

@@ -1,0 +1,66 @@
+main = () => {
+  seed = "flower-cards-v1"
+  dealt = deal(seed, DECK, ["Brekk", "Clive"])
+  IO.pLog(dealt)
+  state = initialize(dealt)
+  IO.cTrace("Initial Hands!", state.players)
+  naiveMove(seed, state) |> IO.cTrace("yooo")
+  playedCards = [
+    PlayingCard(Played("Brekk"), Card(Cherry, Hikari)),
+    PlayingCard(Played("Clive"), Card(Iris, Tane)),
+    PlayingCard(Played("Clive"), Card(Clover, Tanzaku)),
+    PlayingCard(Discarded, Card(Wisteria, Kasu)),
+    PlayingCard(Discarded, Card(Clover, Kasu)),
+    PlayingCard(Played("Clive"), Card(Pine, Tanzaku)),
+    PlayingCard(Played("Clive"), Card(Peony, Tanzaku)),
+    PlayingCard(Discarded, Card(Chrysanthemum, Kasu)),
+    PlayingCard(Discarded, Card(Plum, Kasu)),
+    PlayingCard(Discarded, Card(Cherry, Kasu)),
+    PlayingCard(Played("Clive"), Card(Grass, Tanzaku)),
+    PlayingCard(Played("Clive"), Card(Plum, Tanzaku)),
+    PlayingCard(Discarded, Card(Grass, Kasu)),
+    PlayingCard(Discarded, Card(Peony, Kasu)),
+    PlayingCard(Discarded, Card(Iris, Kasu)),
+    PlayingCard(Discarded, Card(Maple, Kasu)),
+    PlayingCard(Played("Clive"), Card(Wisteria, Tanzaku)),
+    PlayingCard(Played("Clive"), Card(Chrysanthemum, Tanzaku)),
+    PlayingCard(Played("Brekk"), Card(Chrysanthemum, Tane)),
+    PlayingCard(Played("Brekk"), Card(Peony, Tane)),
+    PlayingCard(Discarded, Card(Wisteria, Kasu)),
+    PlayingCard(Discarded, Card(Iris, Kasu)),
+    PlayingCard(Played("Brekk"), Card(Grass, Hikari)),
+    PlayingCard(Discarded, Card(Clover, Kasu)),
+  ]
+  pipe(
+    map(
+      where {
+        Player(name, cards) =>
+          IO.pTrace(
+            `${name} can make yakus with the following possible cards in their hand`,
+            weighBestMove(cards),
+          )
+      },
+    ),
+  )(state.players)
+  pipe(
+    map(
+      where {
+        Player(name, cards) =>
+          pipe(
+            List.concat(
+              pipe(
+                filterPlayedCards(Played(name)),
+                cardsFromPlayedCards,
+              )(playedCards),
+            ),
+            weighBestMove,
+            IO.pTrace(
+              `${
+                name
+              } can make yakus with the cards in their hand with respect to the cards they've already captured`,
+            ),
+          )(cards)
+      },
+    ),
+  )(state.players)
+}
