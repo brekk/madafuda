@@ -18,7 +18,31 @@ import { getPossibleCardsForYakus } from "@/Yaku"
 playableCards :: List Card -> List Card -> List Card
 export playableCards = (deck, hand) => List.filter(canMatch(deck), hand)
 
-alias DealtState = { pile :: List Card, players :: List Player, visible :: List Card }
+export alias DealtState = { pile :: List Card, players :: List Player, visible :: List Card }
+
+export alias DealtCards = #[List (List Card), List (List Card)]
+
+dealPerPlayer :: List String -> Integer -> DealtCards -> DealtState
+export dealPerPlayer = (playerNames, faceUp, raw) => where(raw) {
+  #[dealt, rest] =>
+    pipe(
+      List.flatten,
+      cut(faceUp),
+      where {
+        #[upCards, pile] =>
+          (
+            {
+              players: pipe(
+                List.zip(playerNames),
+                map(where { #[n, c] => Player(n, sortCards(c)) }),
+              )(dealt),
+              visible: sortCards(upCards),
+              pile,
+            }
+          )
+      },
+    )(rest)
+}
 
 deal :: String -> List Card -> List String -> DealtState
 export deal = (seed, allCards, playerNames) => {
@@ -33,26 +57,7 @@ export deal = (seed, allCards, playerNames) => {
         pipe(
           segment(perPlayer),
           cut(totalPlayers),
-          where {
-            #[dealt, rest] =>
-              pipe(
-                List.flatten,
-                cut(faceUp),
-                where {
-                  #[upCards, pile] =>
-                    (
-                      {
-                        players: pipe(
-                          List.zip(playerNames),
-                          map(where { #[n, c] => Player(n, sortCards(c)) }),
-                        )(dealt),
-                        visible: sortCards(upCards),
-                        pile,
-                      }
-                    )
-                },
-              )(rest)
-          },
+          dealPerPlayer(playerNames, faceUp),
         )(shuffled)
     }
   }
