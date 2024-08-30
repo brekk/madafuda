@@ -3,8 +3,9 @@ import type { Maybe } from "Maybe"
 import type { Card } from "@/Deck"
 
 import List from "List"
+import { Just, Nothing } from "Maybe"
 
-import { BANNERS, NAMED } from "@/Deck"
+import { BANNERS, Card, Cherry, Hikari, NAMED, hasCard } from "@/Deck"
 
 
 
@@ -43,7 +44,7 @@ export hasAnyYaku = (cards) => List.any(checkYaku($, cards), YAKUS)
 matchCardForYaku :: Yaku -> Card -> Maybe Card
 export matchCardForYaku = (yaku, card) => where(yaku) {
   #[a, b, c] =>
-    hasCard(card, [a, b, c]) ? Maybe.Just(card) : Maybe.Nothing
+    hasCard(card, [a, b, c]) ? Just(card) : Nothing
 }
 
 matchCardsForYaku :: Yaku -> List Card -> List (Maybe Card)
@@ -51,7 +52,7 @@ export matchCardsForYaku = (yaku, cards) => pipe(
   map(matchCardForYaku(yaku)),
   List.filter(
     where {
-      Maybe.Nothing =>
+      Nothing =>
         false
 
       _ =>
@@ -62,3 +63,16 @@ export matchCardsForYaku = (yaku, cards) => pipe(
 
 getPossibleCardsForYakus :: List Card -> List (Maybe Card)
 export getPossibleCardsForYakus = (cards) => chain(matchCardsForYaku($, cards), YAKUS)
+
+// assumes that the yaku is valid and sorted
+pointsForYaku :: Yaku -> Integer
+export pointsForYaku = where {
+  #[_, Card(Cherry, Hikari), _] =>
+    100
+
+  #[Card(Cherry, Hikari), _, _] =>
+    100
+
+  _ =>
+    50
+}

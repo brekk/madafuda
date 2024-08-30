@@ -1,4 +1,17 @@
+import type { Maybe } from "Maybe"
+
 import type { Card } from "@/Deck"
+import type { Player } from "@/Player"
+
+import Dict from "Dictionary"
+import List from "List"
+import { Just, fromMaybe } from "Maybe"
+import Random from "Random"
+
+import { canMatch, sortCards } from "@/Deck"
+import { cut, segment } from "@/List"
+import { Player, getPlayerByName, numberOfCardsByNumberOfPlayers, playerName } from "@/Player"
+import { getPossibleCardsForYakus } from "@/Yaku"
 
 
 
@@ -71,7 +84,7 @@ export initialize = (state) => (
       .players,
       List.nth(0),
       map(playerName),
-      Maybe.fromMaybe("Nobody"),
+      fromMaybe("Nobody"),
     )(state),
   }
 )
@@ -142,7 +155,7 @@ moveDictionary :: List (Maybe Card) -> Dictionary Card Integer
 export moveDictionary = (cards) => pipe(
   List.reduce(
     (agg, mCard) => where(mCard) {
-      Maybe.Just(c) =>
+      Just(c) =>
         Dict.includes(c, agg) ? Dict.update((x) => x + 1, c, agg) : Dict.insert(c, 1, agg)
 
       _ =>
@@ -162,7 +175,7 @@ export weighBestMove = (cards) => pipe(
     start = pipe(
       Dict.values,
       List.first,
-      Maybe.fromMaybe(1),
+      fromMaybe(1),
     )(dict)
     return Dict.reduce((k, v, ks) => { return v >= start ? [k, ...ks] : ks }, [], dict)
   },

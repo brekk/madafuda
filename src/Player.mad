@@ -2,6 +2,11 @@ import type { Maybe } from "Maybe"
 
 import type { Card } from "@/Deck"
 
+import { find, nth } from "List"
+import { fromMaybe } from "Maybe"
+
+import { Card } from "@/Deck"
+
 
 
 export type Player = Player(String, List Card)
@@ -15,8 +20,8 @@ export numberOfCardsByNumberOfPlayers = (i) => i == 2
 
 playerAtIndex :: Integer -> List Player -> Player
 export playerAtIndex = (i, players) => pipe(
-  List.nth(i),
-  Maybe.fromMaybe(Player("Nobody", [])),
+  nth(i),
+  fromMaybe(Player("Nobody", [])),
 )(players)
 
 playerName :: Player -> String
@@ -26,7 +31,7 @@ export playerName = where {
 }
 
 getPlayerByName :: String -> List Player -> Maybe Player
-export getPlayerByName = (name, players) => List.find((p) => playerName(p) == name, players)
+export getPlayerByName = (name, players) => find((p) => playerName(p) == name, players)
 
 nameOfPlayerAtIndex :: List Player -> Integer -> String
 export nameOfPlayerAtIndex = (players, i) => pipe(
