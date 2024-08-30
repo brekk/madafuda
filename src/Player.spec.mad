@@ -1,13 +1,9 @@
-import { caseN2, report } from "Study"
+import { Just, Nothing } from "Maybe"
 
-import {
-  Player,
-  cardsPerPlayer,
-  getPlayerByName,
-  nameOfPlayerAtIndex,
-  playerAtIndex,
-  playerName,
-} from "@/Player"
+import { report } from "Study"
+
+import { NAMED } from "@/Deck"
+import { Player, cardsPerPlayer, getPlayerByName, nameOfPlayerAtIndex, playerName } from "@/Player"
 
 
 
@@ -27,3 +23,15 @@ report(
 )
 
 report(playerName, "playerName", [#[Player("Poisson", []), "Poisson"]])
+
+report(
+  getPlayerByName($, [Player("Brekk", [NAMED.sakura]), Player("Clive", [])]),
+  "getPlayerByName",
+  [#["Brekk", Just(Player("Brekk", [NAMED.sakura]))], #["Poisson", Nothing]],
+)
+
+report(
+  nameOfPlayerAtIndex([Player("Brekk", [NAMED.sakura]), Player("Clive", [])]),
+  "nameOfPlayerAtIndex",
+  [#[0, Just("Brekk")], #[4, Nothing]],
+)

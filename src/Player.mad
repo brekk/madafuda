@@ -2,8 +2,8 @@ import type { Maybe } from "Maybe"
 
 import type { Card } from "@/Deck"
 
+import { equals } from "Function"
 import { find, nth } from "List"
-import { fromMaybe } from "Maybe"
 
 import { Card } from "@/Deck"
 
@@ -28,12 +28,6 @@ export cardsPerPlayer = (i) => if (i == 2) {
   #[-1, -1]
 }
 
-playerAtIndex :: Integer -> List Player -> Player
-export playerAtIndex = (i, players) => pipe(
-  nth(i),
-  fromMaybe(Player("Nobody", [])),
-)(players)
-
 playerName :: Player -> String
 export playerName = where {
   Player(name, _) =>
@@ -41,10 +35,16 @@ export playerName = where {
 }
 
 getPlayerByName :: String -> List Player -> Maybe Player
-export getPlayerByName = (name, players) => find((p) => playerName(p) == name, players)
+export getPlayerByName = (name, players) => find(
+  pipe(
+    playerName,
+    equals(name),
+  ),
+  players,
+)
 
-nameOfPlayerAtIndex :: List Player -> Integer -> String
+nameOfPlayerAtIndex :: List Player -> Integer -> Maybe String
 export nameOfPlayerAtIndex = (players, i) => pipe(
-  playerAtIndex(i),
-  playerName,
+  nth(i),
+  map(playerName),
 )(players)
