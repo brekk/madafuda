@@ -1,0 +1,76 @@
+import List from "List"
+import { Just, Nothing } from "Maybe"
+
+import { report } from "Study"
+
+import { Card, Cherry, DECK, Hikari, Kasu, NAMED, Pine, Plum, Tane, Tanzaku } from "@/Deck"
+import {
+  YAKUS,
+  checkYaku,
+  getPossibleCardsForYakus,
+  hasAnyYaku,
+  matchCardForYaku,
+  matchCardsForYaku,
+  matchYakus,
+  partialYaku,
+  pointsForYaku,
+} from "@/Yaku"
+
+
+
+report(
+  partialYaku(#[NAMED.stork, NAMED.sakura, NAMED.warbler]),
+  "partialYaku",
+  [#[List.slice(0, 8, DECK), true], #[List.slice(20, 28, DECK), false]],
+)
+
+report(
+  checkYaku(#[NAMED.stork, NAMED.sakura, NAMED.warbler]),
+  "checkYaku",
+  [#[List.slice(0, 8, DECK), true], #[List.slice(20, 28, DECK), false]],
+)
+
+report(
+  matchYakus,
+  "matchYakus",
+  [#[List.slice(0, 8, DECK), [#[Card(Pine, Hikari), Card(Cherry, Hikari), Card(Plum, Tane)]]]],
+)
+
+report(hasAnyYaku, "hasAnyYaku", [#[List.slice(0, 8, DECK), true]])
+
+report(
+  matchCardForYaku(#[NAMED.stork, NAMED.sakura, NAMED.warbler]),
+  "matchCardForYaku",
+  [#[Card(Pine, Kasu), Nothing], #[NAMED.stork, Just(NAMED.stork)]],
+)
+
+report(
+  matchCardsForYaku(#[NAMED.stork, NAMED.sakura, NAMED.warbler]),
+  "matchCardsForYaku",
+  [
+    #[
+      List.slice(0, 8, DECK),
+      [Just(Card(Pine, Hikari)), Just(Card(Plum, Tane)), Just(Card(Cherry, Hikari))],
+    ],
+  ],
+)
+
+report(
+  getPossibleCardsForYakus,
+  "getPossibleCardsForYakus",
+  [
+    #[
+      List.slice(0, 8, DECK),
+      [
+        Just(Card(Pine, Hikari)),
+        Just(Card(Plum, Tane)),
+        Just(Card(Cherry, Hikari)),
+        Just(Card(Cherry, Hikari)),
+        Just(Card(Pine, Tanzaku)),
+        Just(Card(Plum, Tanzaku)),
+      ],
+    ],
+  ],
+)
+
+report(map(pointsForYaku), "pointsForYaku", [#[YAKUS, [100, 100, 50, 50, 50, 50, 50, 50]]])

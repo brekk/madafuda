@@ -23,17 +23,23 @@ export YAKUS = [
   #[BANNERS.peony, BANNERS.chrysanthemum, BANNERS.maple],
 ]
 
-partialYaku :: Yaku -> List Card -> Boolean
-export partialYaku = (yaku, cards) => where(yaku) {
+yakuToList :: Yaku -> List Card
+export yakuToList = where {
   #[a, b, c] =>
-    List.any(hasCard($, cards), [a, b, c])
+    [a, b, c]
 }
 
+partialYaku :: Yaku -> List Card -> Boolean
+export partialYaku = (yaku, cards) => pipe(
+  yakuToList,
+  List.any(hasCard($, cards)),
+)(yaku)
+
 checkYaku :: Yaku -> List Card -> Boolean
-export checkYaku = (yaku, cards) => where(yaku) {
-  #[a, b, c] =>
-    List.all(hasCard($, cards), [a, b, c])
-}
+export checkYaku = (yaku, cards) => pipe(
+  yakuToList,
+  List.all(hasCard($, cards)),
+)(yaku)
 
 matchYakus :: List Card -> List Yaku
 export matchYakus = (cards) => List.filter(checkYaku($, cards), YAKUS)
