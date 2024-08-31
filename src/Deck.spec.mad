@@ -1,5 +1,6 @@
 import { EQ, GT, LT } from "Compare"
 import List from "List"
+import { assertEquals, test } from "Test"
 
 import { caseN2, report } from "Study"
 
@@ -153,17 +154,24 @@ report(
 )
 
 report(
-  compareCards(NAMED.stork),
+  compareCards(NAMED.warbler),
   "compareCards",
   [
-    #[NAMED.stork, EQ],
-    #[BANNERS.pine, EQ],
-    #[Card(Pine, Kasu), EQ],
+    #[NAMED.stork, GT],
+    #[BANNERS.pine, GT],
+    #[Card(Pine, Kasu), GT],
+    #[BANNERS.plum, GT],
+    #[NAMED.warbler, EQ],
     #[NAMED.sakura, LT],
     #[BANNERS.cherry, LT],
     #[Card(Cherry, Kasu), LT],
+    #[Card(Cherry, Hikari), LT],
+    #[Card(Chrysanthemum, Kasu), LT],
   ],
 )
+
+test("comparison literal", () => assertEquals(NAMED.warbler > BANNERS.plum, true))
+test("value comparison literal", () => assertEquals(Hikari > Tane, true))
 
 report(
   cardInList(List.slice(0, 10, DECK)),
@@ -182,8 +190,8 @@ report(
       [
         Card(Pine, Hikari),
         Card(Pine, Tanzaku),
-        Card(Plum, Tane),
         Card(Plum, Tanzaku),
+        Card(Plum, Tane),
         Card(Cherry, Hikari),
         Card(Cherry, Tanzaku),
       ],

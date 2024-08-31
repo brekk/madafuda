@@ -33,7 +33,15 @@ report(
 report(
   matchYakus,
   "matchYakus",
-  [#[List.slice(0, 8, DECK), [#[Card(Pine, Hikari), Card(Cherry, Hikari), Card(Plum, Tane)]]]],
+  [
+    #[
+      List.slice(0, 12, DECK),
+      [
+        #[Card(Pine, Hikari), Card(Cherry, Hikari), Card(Plum, Tane)],
+        #[Card(Pine, Tanzaku), Card(Plum, Tanzaku), Card(Cherry, Tanzaku)],
+      ],
+    ],
+  ],
 )
 
 report(hasAnyYaku, "hasAnyYaku", [#[List.slice(0, 8, DECK), true]])

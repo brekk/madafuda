@@ -105,45 +105,45 @@ export DECK = [
   BANNERS.pine,
   Card(Pine, Kasu),
   Card(Pine, Kasu),
-  NAMED.warbler,
   BANNERS.plum,
+  NAMED.warbler,
   Card(Plum, Kasu),
   Card(Plum, Kasu),
   NAMED.sakura,
   BANNERS.cherry,
   Card(Cherry, Kasu),
   Card(Cherry, Kasu),
-  NAMED.songbird,
   BANNERS.wisteria,
+  NAMED.songbird,
   Card(Wisteria, Kasu),
   Card(Wisteria, Kasu),
-  NAMED.bridge,
   BANNERS.iris,
+  NAMED.bridge,
   Card(Iris, Kasu),
   Card(Iris, Kasu),
-  NAMED.butterflies,
   BANNERS.peony,
+  NAMED.butterflies,
   Card(Peony, Kasu),
   Card(Peony, Kasu),
-  NAMED.pig,
   BANNERS.clover,
+  NAMED.pig,
   Card(Clover, Kasu),
   Card(Clover, Kasu),
   NAMED.moon,
   BANNERS.grass,
   Card(Grass, Kasu),
   Card(Grass, Kasu),
-  NAMED.sake,
   BANNERS.chrysanthemum,
+  NAMED.sake,
   Card(Chrysanthemum, Kasu),
   Card(Chrysanthemum, Kasu),
-  NAMED.deer,
   BANNERS.maple,
+  NAMED.deer,
   Card(Maple, Kasu),
   Card(Maple, Kasu),
-  NAMED.rainman,
-  NAMED.swallow,
   BANNERS.willow,
+  Card(Willow, Tane),
+  Card(Willow, Tane),
   NAMED.police,
   NAMED.chicken,
   NAMED.foxglove,
@@ -249,13 +249,21 @@ export compareCards = (a, b) => where(#[a, b]) {
   #[Card(s1, v1), Card(s2, v2)] =>
     do {
       x = toOrdinalMonth(s1)
-      x2 = toPointValue(v1)
       y = toOrdinalMonth(s2)
-      y2 = toPointValue(v1)
+      x2 = toPointValue(v1)
+      y2 = toPointValue(v2)
       return if (x == y) {
-        x2 == y2 ? EQ : x2 < y2 ? LT : GT
+        if (x2 == y2) {
+          EQ
+        } else if (x2 < y2) {
+          GT
+        } else {
+          LT
+        }
+      } else if (x > y) {
+        GT
       } else {
-        x > y ? GT : LT
+        LT
       }
     }
 }
