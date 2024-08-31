@@ -14,6 +14,7 @@ import {
   Iris,
   Kasu,
   Maple,
+  NAMED,
   Peony,
   Pine,
   Plum,
@@ -23,6 +24,9 @@ import {
   Wisteria,
 } from "@/Deck"
 import {
+  Discarded,
+  Played,
+  PlayingCard,
   cardsFromPlayedCards,
   deal,
   dealPerPlayer,
@@ -152,5 +156,23 @@ report(
         visible: [],
       },
     ],
+  ],
+)
+
+report(
+  caseN2(siftByOwner),
+  "siftByOwner",
+  [
+    #[#["Brekk", PlayingCard(Played("Brekk"), NAMED.sakura)], true],
+    #[#["Brekk", PlayingCard(Discarded, NAMED.sakura)], false],
+  ],
+)
+
+report(
+  siftByUnowned,
+  "siftByUnowned",
+  [
+    #[PlayingCard(Played("Brekk"), NAMED.sakura), false],
+    #[PlayingCard(Discarded, NAMED.sakura), true],
   ],
 )
