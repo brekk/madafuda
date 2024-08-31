@@ -63,9 +63,6 @@ export deal = (seed, allCards, playerNames) => {
   }
 }
 
-
-
-
 // We're separating cards by in-hand + up already, so PlayState only applies to cards which have been played for points
 export type PlayState = Played(String) | Discarded
 export type PlayingCard = PlayingCard(PlayState, Card)

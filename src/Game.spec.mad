@@ -1,0 +1,156 @@
+import List from "List"
+
+import { caseN2, report } from "Study"
+
+import {
+  Card,
+  Cherry,
+  Chrysanthemum,
+  Clover,
+  DECK,
+  Foxglove,
+  Grass,
+  Hikari,
+  Iris,
+  Kasu,
+  Maple,
+  Peony,
+  Pine,
+  Plum,
+  Tane,
+  Tanzaku,
+  Willow,
+  Wisteria,
+} from "@/Deck"
+import {
+  cardsFromPlayedCards,
+  deal,
+  dealPerPlayer,
+  filterPlayedCards,
+  getHand,
+  getPointCards,
+  initialize,
+  moveDictionary,
+  naiveMove,
+  playableCards,
+  rejectPlayedCards,
+  siftByOwner,
+  siftByUnowned,
+  weighBestMove,
+} from "@/Game"
+import { Player } from "@/Player"
+
+
+
+after8 = List.slice(9, List.length(DECK), DECK)
+
+report(
+  playableCards(after8),
+  "playableCards",
+  [
+    #[
+      List.slice(0, 8, DECK),
+      [
+        Card(Pine, Hikari),
+        Card(Pine, Tanzaku),
+        Card(Pine, Kasu),
+        Card(Pine, Kasu),
+        Card(Plum, Tanzaku),
+        Card(Plum, Tane),
+        Card(Plum, Kasu),
+        Card(Plum, Kasu),
+        Card(Cherry, Hikari),
+      ],
+    ],
+  ],
+)
+
+report(
+  caseN2(deal("seeded-deal")),
+  "deal",
+  [
+    #[#[after8, ["Solo"]], { pile: [], players: [], visible: [] }],
+    #[
+      #[after8, ["Brekk", "Clive"]],
+      {
+        pile: [
+          Card(Foxglove, Tanzaku),
+          Card(Foxglove, Tanzaku),
+          Card(Cherry, Kasu),
+          Card(Chrysanthemum, Tane),
+          Card(Peony, Kasu),
+          Card(Wisteria, Tanzaku),
+          Card(Grass, Tanzaku),
+          Card(Willow, Tanzaku),
+          Card(Wisteria, Tane),
+          Card(Wisteria, Kasu),
+          Card(Wisteria, Kasu),
+          Card(Willow, Tane),
+          Card(Willow, Tane),
+          Card(Clover, Tane),
+          Card(Iris, Tanzaku),
+          Card(Peony, Kasu),
+          Card(Cherry, Kasu),
+        ],
+        players: [
+          Player(
+            "Brekk",
+            [
+              Card(Cherry, Tanzaku),
+              Card(Wisteria, Kasu),
+              Card(Iris, Kasu),
+              Card(Clover, Tanzaku),
+              Card(Grass, Kasu),
+              Card(Chrysanthemum, Tanzaku),
+              Card(Maple, Tanzaku),
+              Card(Maple, Kasu),
+              Card(Willow, Kasu),
+            ],
+          ),
+          Player(
+            "Clive",
+            [
+              Card(Peony, Tanzaku),
+              Card(Peony, Tane),
+              Card(Clover, Kasu),
+              Card(Grass, Hikari),
+              Card(Grass, Kasu),
+              Card(Chrysanthemum, Tanzaku),
+              Card(Maple, Tane),
+              Card(Maple, Kasu),
+              Card(Foxglove, Kasu),
+            ],
+          ),
+        ],
+        visible: [
+          Card(Iris, Tane),
+          Card(Iris, Kasu),
+          Card(Peony, Tanzaku),
+          Card(Clover, Kasu),
+          Card(Chrysanthemum, Kasu),
+          Card(Chrysanthemum, Kasu),
+          Card(Foxglove, Hikari),
+          Card(Foxglove, Tanzaku),
+          Card(Foxglove, Kasu),
+        ],
+      },
+    ],
+  ],
+)
+
+report(
+  initialize,
+  "initialize",
+  [
+    #[
+      { pile: DECK, players: [Player("Brekk", []), Player("Clive", [])], visible: [] },
+      {
+        active: "Brekk",
+        pile: DECK,
+        played: [],
+        players: [Player("Brekk", []), Player("Clive", [])],
+        visible: [],
+      },
+    ],
+  ],
+)
