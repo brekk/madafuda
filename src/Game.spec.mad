@@ -176,3 +176,56 @@ report(
     #[PlayingCard(Discarded, NAMED.sakura), true],
   ],
 )
+
+report(
+  pipe(
+    filterPlayedCards(Played("Brekk")),
+    List.length,
+  ),
+  "filterPlayedCards - with owner",
+  [#[List.mapWithIndex((x, i) => PlayingCard(i < 20 ? Discarded : Played("Brekk"), x), DECK), 28]],
+)
+
+report(
+  pipe(
+    filterPlayedCards(Discarded),
+    List.length,
+  ),
+  "filterPlayedCards - no owner",
+  [#[List.mapWithIndex((x, i) => PlayingCard(i < 20 ? Discarded : Played("Brekk"), x), DECK), 20]],
+)
+
+report(
+  pipe(
+    rejectPlayedCards(Played("Brekk")),
+    List.length,
+  ),
+  "rejectPlayedCards - with owner",
+  [#[List.mapWithIndex((x, i) => PlayingCard(i < 20 ? Discarded : Played("Brekk"), x), DECK), 20]],
+)
+
+report(
+  pipe(
+    rejectPlayedCards(Discarded),
+    List.length,
+  ),
+  "rejectPlayedCards - no owner",
+  [#[List.mapWithIndex((x, i) => PlayingCard(i < 20 ? Discarded : Played("Brekk"), x), DECK), 28]],
+)
+
+report(
+  pipe(
+    getPointCards,
+    List.length,
+  ),
+  "getPointCards",
+  [#[List.mapWithIndex((x, i) => PlayingCard(i < 20 ? Discarded : Played("Brekk"), x), DECK), 28]],
+)
+
+report(
+  cardsFromPlayedCards,
+  "cardsFromPlayedCards",
+  [#[map(PlayingCard(Discarded), List.slice(0, 8, DECK)), List.slice(0, 8, DECK)]],
+)
+
+report(getHand, "getHand", [#[Player("Brekk", DECK), DECK]])
